@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM node:18-slim
 
 WORKDIR /app
 
@@ -7,31 +7,37 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Create non-root user
-RUN useradd -m -u 1000 mcp && \
-    mkdir -p /app/data /app/.mem0 && \
-    chown -R mcp:mcp /app
+# Create directories and set permissions
+RUN mkdir -p /app/data && \
+    chown -R node:node /app
 
-# Copy requirements and install Python dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy package files and install dependencies (including devDependencies for build)
+COPY package*.json ./
+RUN npm ci && npm cache clean --force
 
-# Copy application code
-COPY --chown=mcp:mcp mcp_server.py .
+# Copy source code and TypeScript config
+COPY --chown=node:node src/ ./src/
+COPY --chown=node:node tsconfig.json ./
+COPY --chown=node:node entrypoint.sh .
+
+# Build TypeScript to JavaScript
+RUN npm run build
+
+# Remove dev dependencies to reduce image size
+RUN npm ci --only=production && npm cache clean --force
+
+# Make entrypoint executable
+RUN chmod +x entrypoint.sh
 
 # Switch to non-root user
-USER mcp
+USER node
 
 # Set environment variables for persistence
-ENV MEM0_DIR=/app/.mem0
 ENV DATA_DIR=/app/data
 
-# Expose port
-EXPOSE 8765
-
-# Health check
+# Health check for MCP stdio server
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD curl -f http://localhost:8765/health || exit 1
+  CMD pgrep -f "node dist/index.js" || exit 1
 
-# Run the application
-CMD ["python", "mcp_server.py"]
+# Set entrypoint
+ENTRYPOINT ["./entrypoint.sh"]

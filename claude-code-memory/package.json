@@ -1,0 +1,28 @@
+{
+  "name": "claude-code-memory-mcp-server",
+  "version": "2.0.0",
+  "description": "MCP Memory Server for Claude Code using official Anthropic SDK",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts",
+    "clean": "rm -rf dist",
+    "prebuild": "npm run clean"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "@qdrant/js-client-rest": "^1.12.0",
+    "axios": "^1.7.7",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.8.4",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  },
+  "keywords": ["mcp", "memory", "claude", "ollama", "qdrant"],
+  "author": "Claude Code Memory Team",
+  "license": "MIT"
+}

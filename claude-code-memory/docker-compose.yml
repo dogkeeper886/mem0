@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # Qdrant Vector Database
+  # Qdrant Vector Database (only service needed for MCP)
   qdrant:
     image: qdrant/qdrant:latest
     ports:
@@ -13,38 +13,9 @@ services:
       - QDRANT__SERVICE__HTTP_PORT=6333
       - QDRANT__SERVICE__GRPC_PORT=6334
 
-  # MCP Memory Server (connects to external Ollama)
-  mcp-server:
-    build: .
-    ports:
-      - "8765:8765"
-    volumes:
-      # Persist memory data and configuration
-      - ./data/mcp:/app/data
-      - mcp_memory:/app/.mem0
-    environment:
-      # Set your external Ollama URL here
-      - OLLAMA_URL=${OLLAMA_URL:-http://host.docker.internal:11434}
-      - OLLAMA_MODEL=${OLLAMA_MODEL:-llama3.2:3b}
-      - EMBED_MODEL=${EMBED_MODEL:-nomic-embed-text}
-      - QDRANT_HOST=qdrant
-      - QDRANT_PORT=6333
-      - PORT=8765
-      - MEM0_DIR=/app/.mem0
-    depends_on:
-      - qdrant
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8765/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
-
 volumes:
   qdrant_data:
-  mcp_memory:
+  mcp_memory:  # Keep this for MCP container to use
 
 networks:
   default:
