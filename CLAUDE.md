@@ -1,7 +1,9 @@
 # Claude Code Project Configuration
 
 ## Project Overview
-This project implements an MCP (Model Context Protocol) memory server for Claude Code integration using Mem0 and external Ollama connections.
+This project implements an MCP (Model Context Protocol) memory server for Claude Code integration using the official Anthropic MCP SDK, Mem0, and external Ollama connections.
+
+**Version 2.0.0**: TypeScript implementation using official MCP SDK for better maintainability and protocol compliance.
 
 ## Main Implementation Directory
 ```
@@ -9,16 +11,20 @@ claude-code-memory
 ```
 
 ## Docker-Only Implementation
-**IMPORTANT**: This project uses Docker exclusively. No local Python packages should be installed.
+**IMPORTANT**: This project uses Docker exclusively. Node.js/TypeScript application containerized - no local dependencies required.
 
 ### Two Usage Modes
 
 #### 1. MCP with Claude Code (Production)
 **No .env file needed!** Environment variables are passed directly:
 ```bash
-claude mcp add mem0-memory -- docker run --rm -i --name mem0-memory-mcp \
+claude mcp add mem0-memory -- docker run --rm -i \
+  --name mem0-memory-mcp \
   --network host \
   -e OLLAMA_URL=http://YOUR_OLLAMA_IP:11434 \
+  -e QDRANT_HOST=YOUR_QDRANT_IP \
+  -e OLLAMA_MODEL=llama3.2:3b \
+  -e EMBED_MODEL=nomic-embed-text \
   claude-code-memory-mcp-server
 ```
 
@@ -40,9 +46,10 @@ curl http://localhost:8765/health
 ```
 
 ### Architecture
-- **MCP Server**: Port 8765 (Docker container)
+- **MCP Server**: Node.js/TypeScript with official MCP SDK (Docker container, stdio communication)
 - **Qdrant Vector DB**: Port 6333 (Docker container)  
 - **Ollama**: External URL connection (not containerized)
+- **Official MCP SDK**: @modelcontextprotocol/sdk for protocol compliance
 
 ### Data Persistence
 All data is persisted using Docker volumes:
@@ -60,11 +67,14 @@ docker run --rm -v mcp_memory:/data -v $(pwd):/backup alpine tar czf /backup/mcp
 ```
 
 ### Key Files
-- `mcp_server.py` - MCP protocol implementation
+- `src/index.ts` - Main MCP server with official SDK
+- `src/tools/` - Individual memory tool implementations  
+- `src/memory/` - Memory client and configuration
+- `package.json` - Node.js dependencies and scripts
+- `tsconfig.json` - TypeScript configuration
 - `docker-compose.yml` - Service orchestration
 - `Dockerfile` - MCP server container
-- `requirements.txt` - Python dependencies (containerized)
-- `.env` - Ollama URL configuration
+- `.env` - Ollama URL configuration (for docker-compose only)
 
 ### Environment Variables
 - `OLLAMA_URL` - External Ollama server URL
@@ -75,7 +85,14 @@ docker run --rm -v mcp_memory:/data -v $(pwd):/backup alpine tar czf /backup/mcp
 
 #### Add MCP Server
 ```bash
-claude mcp add mem0-memory -- docker run --rm -i --name mem0-memory-mcp --network host -e OLLAMA_URL=http://YOUR_OLLAMA_IP:11434 claude-code-memory-mcp-server
+claude mcp add mem0-memory -- docker run --rm -i \
+  --name mem0-memory-mcp \
+  --network host \
+  -e OLLAMA_URL=http://YOUR_OLLAMA_IP:11434 \
+  -e QDRANT_HOST=YOUR_QDRANT_IP \
+  -e OLLAMA_MODEL=llama3.2:3b \
+  -e EMBED_MODEL=nomic-embed-text \
+  claude-code-memory-mcp-server
 ```
 
 #### Manage MCP Server

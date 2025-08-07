@@ -45,11 +45,21 @@ export class MemoryClient {
       await this.qdrant.getCollections();
       this.log('info', '✓ Qdrant connection successful');
       
-      // Create collection if it doesn't exist
+      // Create collection if it doesn't exist or recreate if dimensions don't match
       try {
-        await this.qdrant.getCollection(this.config.qdrant.collectionName);
+        const collection = await this.qdrant.getCollection(this.config.qdrant.collectionName);
+        const expectedSize = 768; // nomic-embed-text dimension
+        
+        // Check if vector dimensions match
+        if (collection.config?.params?.vectors && 
+            'size' in collection.config.params.vectors && 
+            collection.config.params.vectors.size !== expectedSize) {
+          this.log('info', `Collection exists with wrong dimensions (${collection.config.params.vectors.size}), recreating with ${expectedSize}`);
+          await this.qdrant.deleteCollection(this.config.qdrant.collectionName);
+          throw new Error('Collection deleted, will recreate');
+        }
       } catch (e) {
-        this.log('info', `Creating collection: ${this.config.qdrant.collectionName}`);
+        this.log('info', `Creating collection: ${this.config.qdrant.collectionName} with 768 dimensions`);
         await this.qdrant.createCollection(this.config.qdrant.collectionName, {
           vectors: {
             size: 768, // nomic-embed-text dimension

@@ -39,7 +39,7 @@ Docker-based MCP (Model Context Protocol) server for Claude Code memory integrat
      -e OLLAMA_URL=http://YOUR_OLLAMA_IP:11434 \
      -e QDRANT_HOST=YOUR_QDRANT_IP \
      -e OLLAMA_MODEL=llama3.2:3b \
-     -e EMBED_MODEL=nomic-embed-text \
+     -e EMBED_MODEL=nomic-embed-text:v1.5 \
      claude-code-memory-mcp-server
    ```
 
@@ -48,7 +48,7 @@ Docker-based MCP (Model Context Protocol) server for Claude Code memory integrat
 - `OLLAMA_URL` - Ollama server URL (required)
 - `QDRANT_HOST` - Qdrant host IP or hostname (required)
 - `OLLAMA_MODEL` - LLM model (default: `llama3.2:3b`)  
-- `EMBED_MODEL` - Embedding model (default: `nomic-embed-text`)
+- `EMBED_MODEL` - Embedding model (default: `nomic-embed-text:v1.5`)
 - `QDRANT_PORT` - Qdrant port (default: `6333`)
 
 ## Endpoints
