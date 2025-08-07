@@ -9,7 +9,10 @@ import { MemoryConfigManager } from './memory/config.js';
 import { MemoryClient } from './memory/client.js';
 import { addMemoryTool, handleAddMemory } from './tools/add-memory.js';
 import { searchMemoryTool, handleSearchMemory } from './tools/search-memory.js';
+import { searchMemoryGlobalTool, handleSearchMemoryGlobal } from './tools/search-memory-global.js';
 import { listMemoriesTool, handleListMemories } from './tools/list-memories.js';
+import { listProjectMemoriesTool, handleListProjectMemories } from './tools/list-project-memories.js';
+import { getProjectContextTool, handleGetProjectContext } from './tools/get-project-context.js';
 import { deleteMemoryTool, handleDeleteMemory } from './tools/delete-memory.js';
 import { resetMemoryTool, handleResetMemory } from './tools/reset-memory.js';
 
@@ -22,7 +25,7 @@ class MemoryMCPServer {
     this.server = new Server(
       {
         name: 'mem0-memory',
-        version: '2.0.0',
+        version: '2.1.0',
       },
       {
         capabilities: {
@@ -57,7 +60,10 @@ class MemoryMCPServer {
         tools: [
           addMemoryTool,
           searchMemoryTool,
+          searchMemoryGlobalTool,
           listMemoriesTool,
+          listProjectMemoriesTool,
+          getProjectContextTool,
           deleteMemoryTool,
           resetMemoryTool,
         ],
@@ -76,8 +82,17 @@ class MemoryMCPServer {
           case 'search_memory':
             return await handleSearchMemory(this.memoryClient, args);
 
+          case 'search_memory_global':
+            return await handleSearchMemoryGlobal(this.memoryClient, args);
+
           case 'list_memories':
             return await handleListMemories(this.memoryClient, args);
+
+          case 'list_project_memories':
+            return await handleListProjectMemories(this.memoryClient, args);
+
+          case 'get_project_context':
+            return await handleGetProjectContext(this.memoryClient, args);
 
           case 'delete_memory':
             return await handleDeleteMemory(this.memoryClient, args);

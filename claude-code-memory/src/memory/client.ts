@@ -2,6 +2,7 @@ import axios, { AxiosInstance } from 'axios';
 import { QdrantClient } from '@qdrant/js-client-rest';
 import { randomUUID } from 'crypto';
 import { Memory, SearchResult, MemoryConfig } from '../types/schema.js';
+import { detectProjectContext, ProjectContext } from './project.js';
 
 export class MemoryClient {
   private qdrant: QdrantClient;
@@ -97,12 +98,23 @@ export class MemoryClient {
     try {
       const memories: Memory[] = [];
       
+      // Detect current project context
+      const projectContext = detectProjectContext();
+      
       for (const message of messages) {
         const content = typeof message === 'string' ? message : JSON.stringify(message);
         const embedding = await this.getEmbedding(content);
         
         const memoryId = randomUUID();
         const createdAt = new Date().toISOString();
+        
+        // Enhanced metadata with project context
+        const enhancedMetadata = {
+          ...metadata,
+          ...projectContext,
+          timestamp: createdAt // Override with ISO format
+        };
+        
         const point = {
           id: memoryId,
           vector: embedding,
@@ -110,7 +122,7 @@ export class MemoryClient {
             content,
             user_id: userId,
             created_at: createdAt,
-            ...metadata
+            ...enhancedMetadata
           }
         };
 
@@ -136,20 +148,49 @@ export class MemoryClient {
   }
 
   async searchMemory(query: string, userId = 'default', limit = 5): Promise<SearchResult[]> {
+    // Default to current project scope for backward compatibility
+    return this.searchMemoryWithProject(query, userId, limit, 'current');
+  }
+
+  async searchMemoryWithProject(
+    query: string, 
+    userId = 'default', 
+    limit = 5, 
+    projectScope: 'current' | 'global' | 'project' = 'current',
+    projectId?: string
+  ): Promise<SearchResult[]> {
     await this.initialize();
     
     try {
       const queryEmbedding = await this.getEmbedding(query);
       
+      // Build filters based on scope
+      const filters: any[] = [
+        {
+          key: 'user_id',
+          match: { value: userId }
+        }
+      ];
+
+      // Add project filtering if not global scope
+      if (projectScope === 'current') {
+        const projectContext = detectProjectContext();
+        filters.push({
+          key: 'project_id',
+          match: { value: projectContext.project_id }
+        });
+      } else if (projectScope === 'project' && projectId) {
+        filters.push({
+          key: 'project_id',
+          match: { value: projectId }
+        });
+      }
+      // 'global' scope doesn't add project filter
+      
       const searchResult = await this.qdrant.search(this.config.qdrant.collectionName, {
         vector: queryEmbedding,
         filter: {
-          must: [
-            {
-              key: 'user_id',
-              match: { value: userId }
-            }
-          ]
+          must: filters
         },
         limit,
         with_payload: true
