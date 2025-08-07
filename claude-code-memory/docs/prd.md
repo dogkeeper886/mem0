@@ -24,15 +24,21 @@ Claude Code → MCP stdio → MCP Server (Docker) → Mem0 → Ollama (External 
 
 ## Components
 - `mcp_server.py` - MCP protocol implementation
-- `docker-compose.yml` - Minimal setup (no local Ollama)
+- `docker-compose.yml` - Development/testing setup
 - `Dockerfile` - MCP server container
 - `requirements.txt` - Python dependencies
-- `.env` - Ollama URL configuration
+- `.env.example` - Example config (only for docker-compose testing)
 
 ## Configuration
+
+### For MCP with Claude Code (Production)
+Environment variables passed directly in docker run command:
 - `OLLAMA_URL` - External Ollama server URL
 - `OLLAMA_MODEL` - LLM model name
 - `EMBED_MODEL` - Embedding model name
+
+### For Docker Compose (Development/Testing)
+Uses `.env` file for configuration (copy from `.env.example`)
 
 ## Success Criteria
 - Start with single `docker-compose up` command
