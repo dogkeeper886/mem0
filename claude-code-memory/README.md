@@ -25,31 +25,46 @@ A Docker-based MCP (Model Context Protocol) server that provides persistent memo
 
 ```bash
 # Pull the latest pre-built image
-docker pull your-dockerhub-username/claude-code-memory-mcp-server:latest
+docker pull dogkeeper886/claude-code-memory-mcp-server:latest
 ```
 
-### 2. Start Qdrant Database
+### 2. Database Setup with Docker Compose
 
-```bash
-# Create a docker-compose.yml file
-cat > docker-compose.yml << 'EOF'
+Create a `docker-compose.yml` file for the Qdrant vector database:
+
+```yaml
 version: '3.8'
+
 services:
+  # Qdrant Vector Database (only service needed for MCP)
   qdrant:
     image: qdrant/qdrant:latest
     ports:
       - "6333:6333"
+      - "6334:6334"
     volumes:
       - qdrant_data:/qdrant/storage
     environment:
-      QDRANT__SERVICE__HTTP_PORT: 6333
+      - QDRANT__SERVICE__HTTP_PORT=6333
+      - QDRANT__SERVICE__GRPC_PORT=6334
 
 volumes:
   qdrant_data:
-EOF
+  mcp_memory:  # Keep this for MCP container to use
 
-# Start Qdrant
+networks:
+  default:
+    name: claude-code-memory
+```
+
+Start the database:
+
+```bash
+# Start Qdrant database
 docker compose up -d
+
+# Verify it's running
+curl http://localhost:6333/health
 ```
 
 ### 3. Add to Claude Code
@@ -62,7 +77,7 @@ claude mcp add mem0-memory -- docker run --rm -i \
   -e QDRANT_HOST=YOUR_QDRANT_IP \
   -e OLLAMA_MODEL=llama3.2:3b \
   -e EMBED_MODEL=nomic-embed-text \
-  your-dockerhub-username/claude-code-memory-mcp-server:latest
+  dogkeeper886/claude-code-memory-mcp-server:latest
 ```
 
 ### 4. Verify Installation
@@ -168,14 +183,14 @@ claude mcp remove mem0-memory
 claude mcp remove mem0-memory
 
 # Pull latest image
-docker pull your-dockerhub-username/claude-code-memory-mcp-server:latest
+docker pull dogkeeper886/claude-code-memory-mcp-server:latest
 
 # Re-add with same command as installation
 claude mcp add mem0-memory -- docker run --rm -i \
   --name mem0-memory-mcp --network host \
   -e OLLAMA_URL=http://YOUR_OLLAMA_IP:11434 \
   -e QDRANT_HOST=YOUR_QDRANT_IP \
-  your-dockerhub-username/claude-code-memory-mcp-server:latest
+  dogkeeper886/claude-code-memory-mcp-server:latest
 ```
 
 ## 💾 Data Persistence
